@@ -42,7 +42,10 @@ entity synthblocks is
         bit_clk : in std_logic;
         sync : out std_logic;
         sdata_out : out std_logic;
-        ac97_nrst : out std_logic);
+        ac97_nrst : out std_logic;
+   --serial comm
+        rx : in std_logic;
+        tx : out std_logic);
   
 end synthblocks;
 
@@ -85,8 +88,8 @@ architecture Behavioral of synthblocks is
 
   --control bus
   signal ctl_data_addr : std_logic_vector(15 downto 0);
-  signal ctl_data_in : std_logic_vector(15 downto 0);
-  signal ctl_data_out : std_logic_vector(15 downto 0);
+  signal ctl_data_from : std_logic_vector(15 downto 0);
+  signal ctl_data_to : std_logic_vector(15 downto 0);
   signal ctl_rd : std_logic;
   signal ctl_wr : std_logic;
 
@@ -150,13 +153,13 @@ begin
              opmat_cmat2=>voice_0_cmat2,
              opmat_sel=>voice_0_op_sel);
 
-  --synchronous control unit
+  --voice parameter control unit
   ctl_unit: entity work.control_unit(control)
     port map(clk=>sysclk_100,
              rst=>rst,
              data_addr=>ctl_data_addr,
-             data_in=>ctl_data_in,
-             data_out=>ctl_data_out,
+             data_in=>ctl_data_from,
+             data_out=>ctl_data_to,
              rd_en=>ctl_rd,
              wr_en=>ctl_wr,
              v0_r0=>voice_0_shamt_12,
@@ -166,6 +169,18 @@ begin
              v0_r4=>open,--voice_0_osc_sel,
              v0_r5=>open,--voice_0_op_sel
              );
+
+  --communications unit
+  comm_unit: entity work.serial_midi(comm)
+    port map(clk=>sysclk_100,
+             rst=>rst,
+             ctl_addr=>ctl_data_addr,
+             ctl_data_out=>ctl_data_from,
+             ctl_data_in=>ctl_data_to,
+             ctl_rd=>ctl_rd,
+             ctl_wr=>ctl_wr,
+             rx=>rx,
+             tx=>tx);
     
   
   --sample oscillator data
