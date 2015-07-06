@@ -167,7 +167,7 @@ begin
              v0_r2=>open,--voice_0_cmat1,
              v0_r3=>open,--voice_0_cmat2,
              v0_r4=>open,--voice_0_osc_sel,
-             v0_r5=>open,--voice_0_op_sel
+             v0_r5=>open--voice_0_op_sel
              );
 
   --communications unit
@@ -181,6 +181,18 @@ begin
              ctl_wr=>ctl_wr,
              rx=>rx,
              tx=>tx);
+
+  --pitch generation & control
+  pitch_unit: entity work.pitch_gen(gen)
+    port map(clk=>sysclk_100,
+             rst=>rst,
+             data_addr=>ctl_data_addr,
+             data_in=>ctl_data_from,
+             data_out=>ctl_data_to,
+             rd_en=>ctl_rd,
+             wr_en=>ctl_wr,
+             v0_pitch=>open--voice_0_pitch
+             );
     
   
   --sample oscillator data
