@@ -82,6 +82,17 @@ architecture Behavioral of synthblocks is
   signal L_bus, R_bus, L_bus_out, R_bus_out : std_logic_vector(17 downto 0);
   signal cmd_addr : std_logic_vector(7 downto 0);
   signal cmd_data : std_logic_vector(15 downto 0);
+
+  --control bus
+  signal ctl_data_addr : std_logic_vector(15 downto 0);
+  signal ctl_data_in : std_logic_vector(15 downto 0);
+  signal ctl_data_out : std_logic_vector(15 downto 0);
+  signal ctl_rd : std_logic;
+  signal ctl_wr : std_logic;
+
+  --control registers
+  
+)
   
 begin
 
@@ -138,6 +149,23 @@ begin
              opmat_cmat1=>voice_0_cmat1,
              opmat_cmat2=>voice_0_cmat2,
              opmat_sel=>voice_0_op_sel);
+
+  --synchronous control unit
+  ctl_unit: entity work.control_unit(control)
+    port map(clk=>sysclk_100,
+             rst=>rst,
+             data_addr=>ctl_data_addr,
+             data_in=>ctl_data_in,
+             data_out=>ctl_data_out,
+             rd_en=>ctl_rd,
+             wr_en=>ctl_wr,
+             v0_r0=>voice_0_shamt_12,
+             v0_r1=>voice_0_shamt_34,
+             v0_r2=>open,--voice_0_cmat1,
+             v0_r3=>open,--voice_0_cmat2,
+             v0_r4=>open,--voice_0_osc_sel,
+             v0_r5=>open,--voice_0_op_sel
+             );
     
   
   --sample oscillator data
