@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity 4_to_1_mixer is
+entity mix_4_to_1 is
   generic(data_depth : integer := 24);
   port(in_1 : in std_logic_vector(data_depth-1 downto 0);
        in_2 : in std_logic_vector(data_depth-1 downto 0);
@@ -14,11 +14,11 @@ entity 4_to_1_mixer is
        gain_1 : in std_logic_vector(15 downto 0);
        gain_2 : in std_logic_vector(15 downto 0);
        gain_3 : in std_logic_vector(15 downto 0);
-       gain_4 : in std_logic_vector(15 downto 0);
+       gain_4 : in std_logic_vector(15 downto 0)
        );
 end entity;
 
-architecture mix of 4_to_1_mixer is
+architecture mix of mix_4_to_1 is
 
   signal in_1_g : std_logic_vector(data_depth-1 downto 0);
   signal in_2_g : std_logic_vector(data_depth-1 downto 0);
