@@ -56,16 +56,30 @@ architecture Behavioral of synthblocks is
   signal sysclk_100 : std_logic;
   signal rst : std_logic;
 
+  --voice group signals
+  signal vgroup0_cmat1 : std_logic_vector(15 downto 0);
+  signal vgroup0_cmat2 : std_logic_vector(15 downto 0);
+  signal vgroup0_shamt_12 : std_logic_vector(15 downto 0);
+  signal vgroup0_shamt_34 : std_logic_vector(15 downto 0);
+  signal vgroup0_osc_sel : std_logic_vector(15 downto 0);
+  signal vgroup0_op_sel : std_logic_vector(15 downto 0);
+  
   --voice signals
   signal voice_0_out : std_logic_vector(data_depth-1 downto 0);
   signal voice_0_pitch : std_logic_vector(6 downto 0);
-  signal voice_0_cmat1 : std_logic_vector(15 downto 0);
-  signal voice_0_cmat2 : std_logic_vector(15 downto 0);
-  signal voice_0_shamt_12 : std_logic_vector(15 downto 0);
-  signal voice_0_shamt_34 : std_logic_vector(15 downto 0);
-  signal voice_0_osc_sel : std_logic_vector(15 downto 0);
-  signal voice_0_op_sel : std_logic_vector(15 downto 0);
   signal voice_0_active : std_logic;
+
+  signal voice_1_out : std_logic_vector(data_depth-1 downto 0);
+  signal voice_1_pitch : std_logic_vector(6 downto 0);
+  signal voice_1_active : std_logic;
+
+  signal voice_2_out : std_logic_vector(data_depth-1 downto 0);
+  signal voice_2_pitch : std_logic_vector(6 downto 0);
+  signal voice_2_active : std_logic;
+
+  signal voice_3_out : std_logic_vector(data_depth-1 downto 0);
+  signal voice_3_pitch : std_logic_vector(6 downto 0);
+  signal voice_3_active : std_logic;
   
   component clk_wiz_v3_6 is
     port
@@ -104,10 +118,10 @@ begin
 
   rst <= not top_rst;
   voice_0_pitch <= switches(5 downto 0) & '0';
-  voice_0_osc_sel <= "00000000000000" & switches(7 downto 6);
-  voice_0_cmat1 <= x"0001";
-  voice_0_cmat2 <= x"0002";
-  voice_0_op_sel <= x"0000";
+  vgroup0_osc_sel <= "00000000000000" & switches(7 downto 6);
+  vgroup0_cmat1 <= x"0001";
+  vgroup0_cmat2 <= x"0002";
+  vgroup0_op_sel <= x"0000";
   voice_0_active <= '1';
   
   --system clock
@@ -150,16 +164,55 @@ begin
     generic map(data_depth=>data_depth)
     port map(data_out=>voice_0_out,
              pitch=>voice_0_pitch,
-             osc_sel=>voice_0_osc_sel,
-             osc_1_2_shamt=>voice_0_shamt_12,
-             osc_3_4_shamt=>voice_0_shamt_34,
-             opmat_cmat1=>voice_0_cmat1,
-             opmat_cmat2=>voice_0_cmat2,
-             opmat_sel=>voice_0_op_sel,
+             osc_sel=>vgroup0_osc_sel,
+             osc_1_2_shamt=>vgroup0_shamt_12,
+             osc_3_4_shamt=>vgroup0_shamt_34,
+             opmat_cmat1=>vgroup0_cmat1,
+             opmat_cmat2=>vgroup0_cmat2,
+             opmat_sel=>vgroup0_op_sel,
              active=>voice_0_active,
-				 clk_100=>sysclk_100,
-				 rst=>rst);
+             clk_100=>sysclk_100,
+             rst=>rst);
 
+  voice1: entity work.voice(sound)
+    generic map(data_depth=>data_depth)
+    port map(data_out=>voice_1_out,
+             pitch=>voice_1_pitch,
+             osc_1_2_shamt=>vgroup0_shamt_12,
+             osc_3_4_shamt=>vgroup0_shamt_34,
+             opmat_cmat1=>vgroup0_cmat1,
+             opmat_cmat2=>vgroup0_cmat2,
+             opmat_sel=>vgroup0_op_sel,
+             active=>voice_1_active,
+             clk_100=>sysclk_100,
+             rst=>rst);
+
+  voice2: entity work.voice(sound)
+    generic map(data_depth=>data_depth)
+    port map(data_out=>voice_2_out,
+             pitch=>voice_2_pitch,
+             osc_1_2_shamt=>vgroup0_shamt_12,
+             osc_3_4_shamt=>vgroup0_shamt_34,
+             opmat_cmat1=>vgroup0_cmat1,
+             opmat_cmat2=>vgroup0_cmat2,
+             opmat_sel=>vgroup0_op_sel,
+             active=>voice_2_active,
+             clk_100=>sysclk_100,
+             rst=>rst);
+
+    voice3: entity work.voice(sound)
+    generic map(data_depth=>data_depth)
+    port map(data_out=>voice_3_out,
+             pitch=>voice_3_pitch,
+             osc_1_2_shamt=>vgroup0_shamt_12,
+             osc_3_4_shamt=>vgroup0_shamt_34,
+             opmat_cmat1=>vgroup0_cmat1,
+             opmat_cmat2=>vgroup0_cmat2,
+             opmat_sel=>vgroup0_op_sel,
+             active=>voice_3_active,
+             clk_100=>sysclk_100,
+             rst=>rst);
+  
   --voice parameter control unit
   ctl_unit: entity work.control_unit(control)
     port map(clk=>sysclk_100,
@@ -169,12 +222,12 @@ begin
              data_out=>voice_data_to_ctl,
              rd_en=>ctl_rd,
              wr_en=>ctl_wr,
-             v0_r0=>voice_0_shamt_12,
-             v0_r1=>voice_0_shamt_34,
-             v0_r2=>open,--voice_0_cmat1,
-             v0_r3=>open,--voice_0_cmat2,
-             v0_r4=>open,--voice_0_osc_sel,
-             v0_r5=>open--voice_0_op_sel
+             v0_r0=>vgroup0_shamt_12,
+             v0_r1=>vgroup0_shamt_34,
+             v0_r2=>open,--vgroup0_cmat1,
+             v0_r3=>open,--vgroup0_cmat2,
+             v0_r4=>open,--vgroup0_osc_sel,
+             v0_r5=>open--vgroup0_op_sel
              );
 
   --communications unit
