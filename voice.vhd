@@ -5,7 +5,9 @@ use ieee.numeric_std.all;
 entity voice is
   generic(data_depth : integer := 24);
   port(pitch : in std_logic_vector(6 downto 0);
-       data_out : out std_logic_vector(data_depth-1 downto 0)
+       data_out : out std_logic_vector(data_depth-1 downto 0);
+		 clk_100 : in std_logic;
+		 rst : in std_logic;
 
        --configuration
        osc_sel : in std_logic_vector(15 downto 0);
@@ -13,7 +15,8 @@ entity voice is
        osc_3_4_shamt : in std_logic_vector(15 downto 0);
        opmat_cmat1 : in std_logic_vector(15 downto 0);
        opmat_cmat2 : in std_logic_vector(15 downto 0);
-       opmat_sel : in std_logic_vector(15 downto 0)
+       opmat_sel : in std_logic_vector(15 downto 0);
+       active : in std_logic
        
        );
 
@@ -91,7 +94,7 @@ begin
              pitch_in=>osc3_pitch,
              pitch_out=>osc3_spitch);
 
-  osc4_shamt <= osc_3_4_shamt(15 downto 0);
+  osc4_shamt <= osc_3_4_shamt(15 downto 8);
   osc4_shift: entity work.pitch_shifter(shift)
     port map(shamt=> osc4_shamt,
              pitch_in=>osc4_pitch,
@@ -101,7 +104,7 @@ begin
   osc1: entity work.osc(Behavioral)
     generic map(data_depth=>data_depth,
 	             wt_size => 9)
-    port map( sysclk_10=>sysclk_10,
+    port map( sysclk_10=>clk_100,
               rst=>rst,
               sigout=>osc1_out,
               osc_sel=>osc1_sel,
@@ -116,7 +119,7 @@ begin
   osc2_sel <= osc_sel(5 downto 3);
   osc2: entity work.osc(Behavioral)
     generic map(data_depth=>data_depth)
-    port map(sysclk_10=>sysclk_10,
+    port map(sysclk_10=>clk_100,
              rst=>rst,
              sigout=>osc2_out,
              osc_sel=>osc2_sel,
@@ -128,10 +131,10 @@ begin
          gain_in=>osc2_gain,
          data_out=>osc2_post_gain);
 
-  osc3_sel <= osc_sel(8 downto 5);
+  osc3_sel <= osc_sel(8 downto 6);
   osc3: entity work.osc(Behavioral)
     generic map(data_depth=>data_depth)
-    port map(sysclk_10=>sysclk_10,
+    port map(sysclk_10=>clk_100,
              rst=>rst,
              sigout=>osc3_out,
              osc_sel=>osc3_sel,
@@ -143,10 +146,10 @@ begin
          gain_in=>osc3_gain,
          data_out=>osc3_post_gain);
 
-  osc4_sel <= osc_sel(11 downto 8);
+  osc4_sel <= osc_sel(11 downto 9);
   osc4: entity work.osc(Behavioral)
     generic map(data_depth=>data_depth)
-    port map(sysclk_10=>sysclk_10,
+    port map(sysclk_10=>clk_100,
              rst=>rst,
              sigout=>osc4_out,
              osc_sel=>osc4_sel,
@@ -174,7 +177,7 @@ begin
              out_d=>opmat_outd);
 
   --mix oscillators
-  mix0: entity work.4_to_1_mixer(mix)
+  mix0: entity work.mix_4_to_1(mix)
     generic map(data_depth=>data_depth)
     port map(in_1=>opmat_outa,
              in_2=>opmat_outb,
@@ -187,6 +190,7 @@ begin
              mix_out=>mixer_out
              );
 
-  data_out <= mixer_out;
+  data_out <= mixer_out when active = '1' else
+              (others=>'0');
   
 end architecture;
