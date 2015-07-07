@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity pitch_gen is
-  generic(voice_num : integer := 1);
+  generic(voice_num : integer := 4);
   port(clk : in std_logic;
        rst : in std_logic;
 
@@ -16,7 +16,16 @@ entity pitch_gen is
 
        --voice pitch
        v0_pitch : out std_logic_vector(6 downto 0);
-       v0_active : out std_logic
+       v0_active : out std_logic;
+
+       v1_pitch : out std_logic_vector(6 downto 0);
+       v1_active : out std_logic;
+
+       v2_pitch : out std_logic_vector(6 downto 0);
+       v2_active : out std_logic;
+
+       v3_pitch : out std_logic_vector(6 downto 0);
+       v3_active : out std_logic
        );
 end entity;
 
@@ -112,6 +121,15 @@ begin
 
   v0_pitch <= voices_to_note(0);
   v0_active <= active_voices(0);
- 
+
+  v1_pitch <= voices_to_note(1);
+  v1_active <= active_voices(1);
+
+  v2_pitch <= voices_to_note(2);
+  v2_active <= active_voices(2);
+
+  v3_pitch <= voices_to_note(3);
+  v3_active <= active_voices(3);
+  
 end architecture;
        
