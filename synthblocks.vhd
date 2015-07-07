@@ -65,6 +65,7 @@ architecture Behavioral of synthblocks is
   signal voice_0_shamt_34 : std_logic_vector(15 downto 0);
   signal voice_0_osc_sel : std_logic_vector(15 downto 0);
   signal voice_0_op_sel : std_logic_vector(15 downto 0);
+  signal voice_0_active : std_logic;
   
   component clk_wiz_v3_6 is
     port
@@ -92,19 +93,22 @@ architecture Behavioral of synthblocks is
   signal ctl_data_to : std_logic_vector(15 downto 0);
   signal ctl_rd : std_logic;
   signal ctl_wr : std_logic;
+  
+  signal pitch_data_to_ctl : std_logic_vector(15 downto 0);
+  signal voice_data_to_ctl : std_logic_vector(15 downto 0);
 
   --control registers
   
-)
   
 begin
 
   rst <= not top_rst;
   voice_0_pitch <= switches(5 downto 0) & '0';
-  voice_0_osc_sel <= '0' & switches(7 downto 6);
+  voice_0_osc_sel <= "00000000000000" & switches(7 downto 6);
   voice_0_cmat1 <= x"0001";
   voice_0_cmat2 <= x"0002";
   voice_0_op_sel <= x"0000";
+  voice_0_active <= '1';
   
   --system clock
   pll: clk_wiz_v3_6 
@@ -151,7 +155,10 @@ begin
              osc_3_4_shamt=>voice_0_shamt_34,
              opmat_cmat1=>voice_0_cmat1,
              opmat_cmat2=>voice_0_cmat2,
-             opmat_sel=>voice_0_op_sel);
+             opmat_sel=>voice_0_op_sel,
+             active=>voice_0_active,
+				 clk_100=>sysclk_100,
+				 rst=>rst);
 
   --voice parameter control unit
   ctl_unit: entity work.control_unit(control)
@@ -159,7 +166,7 @@ begin
              rst=>rst,
              data_addr=>ctl_data_addr,
              data_in=>ctl_data_from,
-             data_out=>ctl_data_to,
+             data_out=>voice_data_to_ctl,
              rd_en=>ctl_rd,
              wr_en=>ctl_wr,
              v0_r0=>voice_0_shamt_12,
@@ -176,7 +183,8 @@ begin
              rst=>rst,
              ctl_addr=>ctl_data_addr,
              ctl_data_out=>ctl_data_from,
-             ctl_data_in=>ctl_data_to,
+             pitch_data_in=>pitch_data_to_ctl,
+				 voice_data_in=>voice_data_to_ctl,
              ctl_rd=>ctl_rd,
              ctl_wr=>ctl_wr,
              rx=>rx,
@@ -188,15 +196,16 @@ begin
              rst=>rst,
              data_addr=>ctl_data_addr,
              data_in=>ctl_data_from,
-             data_out=>ctl_data_to,
+             data_out=>pitch_data_to_ctl,
              rd_en=>ctl_rd,
              wr_en=>ctl_wr,
-             v0_pitch=>open--voice_0_pitch
+             v0_pitch=>open,--voice_0_pitch
+             v0_active=>open
              );
     
   
   --sample oscillator data
-  process (sysclk_100, rst, osc1_post_gain)
+  process (sysclk_100, rst)
   begin
 
     if rst = '1' then
