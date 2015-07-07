@@ -67,18 +67,22 @@ architecture Behavioral of synthblocks is
   --voice signals
   signal voice_0_out : std_logic_vector(data_depth-1 downto 0);
   signal voice_0_pitch : std_logic_vector(6 downto 0);
+  signal voice_0_vel : std_logic_vector(6 downto 0);
   signal voice_0_active : std_logic;
 
   signal voice_1_out : std_logic_vector(data_depth-1 downto 0);
   signal voice_1_pitch : std_logic_vector(6 downto 0);
+  signal voice_3_vel : std_logic_vector(6 downto 0);
   signal voice_1_active : std_logic;
 
   signal voice_2_out : std_logic_vector(data_depth-1 downto 0);
   signal voice_2_pitch : std_logic_vector(6 downto 0);
+  signal voice_3_vel : std_logic_vector(6 downto 0);  
   signal voice_2_active : std_logic;
 
   signal voice_3_out : std_logic_vector(data_depth-1 downto 0);
   signal voice_3_pitch : std_logic_vector(6 downto 0);
+  signal voice_3_vel : std_logic_vector(6 downto 0);
   signal voice_3_active : std_logic;
   
   component clk_wiz_v3_6 is
@@ -164,6 +168,7 @@ begin
     generic map(data_depth=>data_depth)
     port map(data_out=>voice_0_out,
              pitch=>voice_0_pitch,
+             velocity=>voice_0_vel,
              osc_sel=>vgroup0_osc_sel,
              osc_1_2_shamt=>vgroup0_shamt_12,
              osc_3_4_shamt=>vgroup0_shamt_34,
@@ -178,6 +183,7 @@ begin
     generic map(data_depth=>data_depth)
     port map(data_out=>voice_1_out,
              pitch=>voice_1_pitch,
+             velocity=>voice_1_vel,
              osc_1_2_shamt=>vgroup0_shamt_12,
              osc_3_4_shamt=>vgroup0_shamt_34,
              opmat_cmat1=>vgroup0_cmat1,
@@ -191,6 +197,7 @@ begin
     generic map(data_depth=>data_depth)
     port map(data_out=>voice_2_out,
              pitch=>voice_2_pitch,
+             velocity=>voice_2_vel,
              osc_1_2_shamt=>vgroup0_shamt_12,
              osc_3_4_shamt=>vgroup0_shamt_34,
              opmat_cmat1=>vgroup0_cmat1,
@@ -204,6 +211,7 @@ begin
     generic map(data_depth=>data_depth)
     port map(data_out=>voice_3_out,
              pitch=>voice_3_pitch,
+             velocity=>voice_3_vel,
              osc_1_2_shamt=>vgroup0_shamt_12,
              osc_3_4_shamt=>vgroup0_shamt_34,
              opmat_cmat1=>vgroup0_cmat1,
@@ -253,7 +261,17 @@ begin
              rd_en=>ctl_rd,
              wr_en=>ctl_wr,
              v0_pitch=>open,--voice_0_pitch
-             v0_active=>open
+             v0_vel=>open,
+             v0_active=>open,
+             v1_pitch=>voice_1_pitch,
+             v1_vel=>voice_1_vel,
+             v1_active=>voice_1_active,
+             v2_pitch=>voice_2_pitch,
+             v2_vel=>voice_2_vel,
+             v2_active=>voice_2_active,
+             v3_pitch=>voice_3_pitch,
+             v3_vel=>voice_3_vel,
+             v3_active=>voice_3_active
              );
     
   

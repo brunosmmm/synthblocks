@@ -126,15 +126,19 @@ begin
   end process;
 
   v0_pitch <= voices_to_note(0);
+  v0_vel <= voices_to_velocity(0);
   v0_active <= active_voices(0);
 
   v1_pitch <= voices_to_note(1);
+  v1_vel <= voices_to_velocity(1);
   v1_active <= active_voices(1);
 
   v2_pitch <= voices_to_note(2);
+  v2_vel <= voices_to_velocity(2);
   v2_active <= active_voices(2);
 
   v3_pitch <= voices_to_note(3);
+  v3_vel <= voices_to_velocity(3);
   v3_active <= active_voices(3);
   
 end architecture;

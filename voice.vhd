@@ -5,9 +5,10 @@ use ieee.numeric_std.all;
 entity voice is
   generic(data_depth : integer := 24);
   port(pitch : in std_logic_vector(6 downto 0);
+       velocity : in std_logic_vector(6 downto 0);
        data_out : out std_logic_vector(data_depth-1 downto 0);
-		 clk_100 : in std_logic;
-		 rst : in std_logic;
+       clk_100 : in std_logic;
+       rst : in std_logic;
 
        --configuration
        osc_sel : in std_logic_vector(15 downto 0);
