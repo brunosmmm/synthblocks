@@ -16,15 +16,19 @@ entity pitch_gen is
 
        --voice pitch
        v0_pitch : out std_logic_vector(6 downto 0);
+       v0_vel : out std_logic_vector(6 downto 0);
        v0_active : out std_logic;
 
        v1_pitch : out std_logic_vector(6 downto 0);
+       v0_vel : out std_logic_vector(6 downto 0);
        v1_active : out std_logic;
 
        v2_pitch : out std_logic_vector(6 downto 0);
+       v0_vel : out std_logic_vector(6 downto 0);
        v2_active : out std_logic;
 
        v3_pitch : out std_logic_vector(6 downto 0);
+       v0_vel : out std_logic_vector(6 downto 0);
        v3_active : out std_logic
        );
 end entity;
@@ -56,6 +60,7 @@ architecture gen of pitch_gen is
   signal active_voices : std_logic_vector(voice_num-1 downto 0);
   signal note_to_voices : note_to_voice;
   signal voices_to_note : voice_to_note;
+  signal voices_to_velocity : voice_to_note;
   signal active_voice_count : integer;
 
 begin
@@ -89,6 +94,7 @@ begin
                   active_notes(to_integer(unsigned(evt_note_number))) <= '1';
                   note_to_voices(to_integer(unsigned(evt_note_number))) <= std_logic_vector(to_unsigned(i, 2**voice_num));
                   voices_to_note(i) <= evt_note_number;
+                  voices_to_velocity(i) <= evt_note_velocity;
                   exit;
                 end if;
               end loop;
