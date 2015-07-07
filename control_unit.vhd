@@ -18,9 +18,13 @@ entity control_unit is
        v0_r2 : out std_logic_vector(15 downto 0);
        v0_r3 : out std_logic_vector(15 downto 0);
        v0_r4 : out std_logic_vector(15 downto 0);
-       v0_r5 : out std_logic_vector(15 downto 0);
+       v0_r5 : out std_logic_vector(15 downto 0)
        
        );
+  constant voice_0_base : unsigned(15 downto 0) := x"0000";
+  constant voice_1_base : unsigned(15 downto 0) := x"0010";
+  constant voice_2_base : unsigned(15 downto 0) := x"0020";
+  constant voice_3_base : unsigned(15 downto 0) := x"0030";
 
 end entity;
 
@@ -58,7 +62,6 @@ begin
   begin
 
     if rst = '1' then
-      data_out <= (others=>'0');
 
       v0_shamt_12 <= (others=>'0');
       v0_shamt_34 <= (others=>'0');
@@ -92,7 +95,7 @@ begin
             v0_op_sel <= data_in;
 
           when others =>
-            null
+            null;
 
         end case;
        

@@ -43,8 +43,8 @@ begin
   --operation select
   opa_sel <= op_sel(2 downto 0);
   opb_sel <= op_sel(5 downto 3);
-  opc_sel <= op_sel(8 downto 5);
-  opd_sel <= op_sel(11 downto 8);
+  opc_sel <= op_sel(8 downto 6);
+  opd_sel <= op_sel(11 downto 9);
 
   --connection matrixes
   opa_in_1 <= in_1 when cmat_1(3 downto 0) = "0001" else
