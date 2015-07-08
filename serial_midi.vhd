@@ -18,18 +18,20 @@ entity serial_midi is
 
        );
 
-  constant note_off_byte : std_logic_vector(7 downto 0) := "1000----";
-  constant note_on_byte : std_logic_vector(7 downto 0) := "1001----";
-  constant kpressure_byte : std_logic_vector(7 downto 0) := "1010----";
-  constant cc_byte : std_logic_vector(7 downto 0) := "1011----";
-  constant pc_byte : std_logic_vector(7 downto 0) := "1100----";
-  constant cpressure_byte : std_logic_vector(7 downto 0) := "1101----";
-  constant pbend_byte : std_logic_vector(7 downto 0) := "1110----";
-  constant sysex_byte : std_logic_vector(7 downto 0) := "11110000";
-  constant timecode_byte : std_logic_vector(7 downto 0) := "11110001";
-  constant sposptr_byte : std_logic_vector(7 downto 0) := "11110010";
-  constant ssel_byte : std_logic_vector(7 downto 0) := "11110011";
-  constant sysex_end_byte : std_logic_vector(7 downto 0) := "11110111";
+  constant note_off_byte : std_logic_vector(3 downto 0) := "1000";
+  constant note_on_byte : std_logic_vector(3 downto 0) := "1001";
+  constant kpressure_byte : std_logic_vector(3 downto 0) := "1010";
+  constant cc_byte : std_logic_vector(3 downto 0) := "1011";
+  constant pc_byte : std_logic_vector(3 downto 0) := "1100";
+  constant cpressure_byte : std_logic_vector(3 downto 0) := "1101";
+  constant pbend_byte : std_logic_vector(3 downto 0) := "1110";
+  constant common_byte : std_logic_vector(3 downto 0) := "1111";
+  
+  constant sysex_byte : std_logic_vector(3 downto 0) := "0000";
+  constant timecode_byte : std_logic_vector(3 downto 0) := "0001";
+  constant sposptr_byte : std_logic_vector(3 downto 0) := "0010";
+  constant ssel_byte : std_logic_vector(3 downto 0) := "0011";
+  constant sysex_end_byte : std_logic_vector(3 downto 0) := "0111";
 
 end entity;
 
@@ -106,25 +108,35 @@ begin
               midi_rx_status := rx_data;
 
               --parse status byte; message length predefined
-              case uart_rx_d is
+              case uart_rx_d(7 downto 4) is
+                
                 when note_off_byte =>
                 when note_on_byte =>
                 when kpressure_byte=>
                 when cc_byte=>
                 when cpressure_byte=>
                 when pbend_byte=>
-                when sposptr_byte=>
+                --when sposptr_byte=>
                   --2 bytes
                   rx_midi_msg.data_size <= to_unsigned(2, 4);
 
                 when pc_byte=>
-                when timecode_byte=>
-                when ssel_byte=>
+                --when timecode_byte=>
+                --when ssel_byte=>
                   rx_midi_msg.data_size <= to_unsigned(1, 4);
 
-                when sysex_byte=>
-                  rx_midi_msg.is_sysex <= '1';
-
+                when common_byte=>
+                  case uart_rx_d(3 downto 0) is
+                    when sposptr_byte=>
+                      rx_midi_msg.data_size <= to_unsigned(2, 4);
+                    when timecode_byte=>
+                    when ssel_byte=>
+                      rx_midi_msg.data_size <= to_unsigned(1, 4);
+                    when sysex_byte=>
+                      rx_midi_msg.is_sysex <= '1';
+                    when others=>
+                      null;
+                  end case;
                 when others=>
                   null;
 
@@ -144,7 +156,7 @@ begin
             elsif rx_midi_msg.is_sysex = '1' then
               --receive until end
               if uart_rx_e = '1' then
-                if uart_rx_d = sysex_end_byte then
+                if uart_rx_d = common_byte & sysex_end_byte then
                   --end
                   midi_rx_status := rx_status;
                   --store count
