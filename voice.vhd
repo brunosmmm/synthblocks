@@ -2,6 +2,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library work;
+use work.sb_common.all;
+
 entity voice is
   generic(data_depth : integer := 24);
   port(pitch : in std_logic_vector(6 downto 0);
@@ -17,6 +20,7 @@ entity voice is
        opmat_cmat1 : in std_logic_vector(15 downto 0);
        opmat_cmat2 : in std_logic_vector(15 downto 0);
        opmat_sel : in std_logic_vector(15 downto 0);
+       param_config1 : in std_logic_vector(15 downto 0);
        active : in std_logic
        
        );
@@ -28,37 +32,37 @@ architecture sound of voice is
   --osc1 signals
   signal osc1_sel : std_logic_vector(2 downto 0);
   signal osc1_out : std_logic_vector(data_depth-1 downto 0);
-  signal osc1_pitch : std_logic_vector(6 downto 0);
+  --signal osc1_pitch : std_logic_vector(6 downto 0);
   signal osc1_spitch : std_logic_vector(6 downto 0);
   signal osc1_shamt : std_logic_vector(7 downto 0);
-  signal osc1_gain : std_logic_vector(15 downto 0);
+  signal osc1_gain : std_logic_vector(6 downto 0);
   signal osc1_post_gain : std_logic_vector(data_depth-1 downto 0);
 
   --osc2 signals
   signal osc2_sel : std_logic_vector(2 downto 0);
   signal osc2_out : std_logic_vector(data_depth-1 downto 0);
-  signal osc2_pitch : std_logic_vector(6 downto 0);
+  --signal osc2_pitch : std_logic_vector(6 downto 0);
   signal osc2_spitch : std_logic_vector(6 downto 0);
   signal osc2_shamt : std_logic_vector(7 downto 0);
-  signal osc2_gain : std_logic_vector(15 downto 0);
+  signal osc2_gain : std_logic_vector(6 downto 0);
   signal osc2_post_gain : std_logic_vector(data_depth-1 downto 0);
 
   --osc3 signals
   signal osc3_sel : std_logic_vector(2 downto 0);
   signal osc3_out : std_logic_vector(data_depth-1 downto 0);
-  signal osc3_pitch : std_logic_vector(6 downto 0);
+  --signal osc3_pitch : std_logic_vector(6 downto 0);
   signal osc3_spitch : std_logic_vector(6 downto 0);
   signal osc3_shamt : std_logic_vector(7 downto 0);
-  signal osc3_gain : std_logic_vector(15 downto 0);
+  signal osc3_gain : std_logic_vector(6 downto 0);
   signal osc3_post_gain : std_logic_vector(data_depth-1 downto 0);
 
   --osc4 signals
   signal osc4_sel : std_logic_vector(2 downto 0);
   signal osc4_out : std_logic_vector(data_depth-1 downto 0);
-  signal osc4_pitch : std_logic_vector(6 downto 0);
+  --signal osc4_pitch : std_logic_vector(6 downto 0);
   signal osc4_spitch : std_logic_vector(6 downto 0);
   signal osc4_shamt : std_logic_vector(7 downto 0);
-  signal osc4_gain : std_logic_vector(15 downto 0);
+  signal osc4_gain : std_logic_vector(6 downto 0);
   signal osc4_post_gain : std_logic_vector(data_depth-1 downto 0);
 
   --operation matrix signals
@@ -73,32 +77,46 @@ architecture sound of voice is
   signal gain_c : std_logic_vector(15 downto 0);
   signal gain_d : std_logic_vector(15 downto 0);
   signal mixer_out : std_logic_vector(data_depth-1 downto 0);
+
+  --use velocity in the normal way, i.e. controlling oscillator
+  --output amplitude
+  alias param_velocity_gain : std_logic is param_config1(0);
   
 begin
+
+  --velocity mode
+  osc1_gain <= velocity when param_velocity_gain = '1' else
+               (others=>'1'); --maximum
+  osc2_gain <= velocity when param_velocity_gain = '1' else
+               (others=>'1');
+  osc3_gain <= velocity when param_velocity_gain = '1' else
+               (others=>'1');
+  osc4_gain <= velocity when param_velocity_gain = '1' else
+               (others=>'1');
 
   --oscillator instances and peripherals
   osc1_shamt <= osc_1_2_shamt(7 downto 0);
   osc1_shift: entity work.pitch_shifter(shift)
-    port map(shamt=> osc1_shamt,
-             pitch_in=>osc1_pitch,
+    port map(shamt=>osc1_shamt,
+             pitch_in=>pitch,
              pitch_out=>osc1_spitch);
 
   osc2_shamt <= osc_1_2_shamt(15 downto 8);
   osc2_shift: entity work.pitch_shifter(shift)
-    port map(shamt=> osc2_shamt,
-             pitch_in=>osc2_pitch,
+    port map(shamt=>osc2_shamt,
+             pitch_in=>pitch,
              pitch_out=>osc2_spitch);
 
   osc3_shamt <= osc_3_4_shamt(7 downto 0);
   osc3_shift: entity work.pitch_shifter(shift)
-    port map(shamt=> osc3_shamt,
-             pitch_in=>osc3_pitch,
+    port map(shamt=>osc3_shamt,
+             pitch_in=>pitch,
              pitch_out=>osc3_spitch);
 
   osc4_shamt <= osc_3_4_shamt(15 downto 8);
   osc4_shift: entity work.pitch_shifter(shift)
-    port map(shamt=> osc4_shamt,
-             pitch_in=>osc4_pitch,
+    port map(shamt=>osc4_shamt,
+             pitch_in=>pitch,
              pitch_out=>osc4_spitch);
   
   osc1_sel <= osc_sel(2 downto 0);
@@ -112,7 +130,9 @@ begin
               pitch=>osc1_spitch);
 
   osc1_gain_block : entity work.gain(modify)
-    generic map(data_depth=>data_depth)
+    generic map(data_depth=>data_depth,
+                gain_res=>7,
+                gain_mode=>gain_mode_velocity)
     port map(data_in=>osc1_out,
          gain_in=>osc1_gain,
          data_out=>osc1_post_gain);
@@ -127,7 +147,9 @@ begin
              pitch=>osc2_spitch);
 
   osc2_gain_block : entity work.gain(modify)
-    generic map(data_depth=>data_depth)
+    generic map(data_depth=>data_depth,
+                gain_res=>7,
+                gain_mode=>gain_mode_velocity)
     port map(data_in=>osc2_out,
          gain_in=>osc2_gain,
          data_out=>osc2_post_gain);
@@ -142,7 +164,9 @@ begin
              pitch=>osc3_spitch);
 
   osc3_gain_block : entity work.gain(modify)
-    generic map(data_depth=>data_depth)
+    generic map(data_depth=>data_depth,
+                gain_res=>7,
+                gain_mode=>gain_mode_velocity)
     port map(data_in=>osc3_out,
          gain_in=>osc3_gain,
          data_out=>osc3_post_gain);
@@ -157,7 +181,9 @@ begin
              pitch=>osc4_spitch);
 
   osc4_gain_block : entity work.gain(modify)
-    generic map(data_depth=>data_depth)
+    generic map(data_depth=>data_depth,
+                gain_res=>7,
+                gain_mode=>gain_mode_velocity)
     port map(data_in=>osc4_out,
          gain_in=>osc4_gain,
          data_out=>osc4_post_gain);
