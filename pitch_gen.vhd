@@ -20,15 +20,15 @@ entity pitch_gen is
        v0_active : out std_logic;
 
        v1_pitch : out std_logic_vector(6 downto 0);
-       v0_vel : out std_logic_vector(6 downto 0);
+       v1_vel : out std_logic_vector(6 downto 0);
        v1_active : out std_logic;
 
        v2_pitch : out std_logic_vector(6 downto 0);
-       v0_vel : out std_logic_vector(6 downto 0);
+       v2_vel : out std_logic_vector(6 downto 0);
        v2_active : out std_logic;
 
        v3_pitch : out std_logic_vector(6 downto 0);
-       v0_vel : out std_logic_vector(6 downto 0);
+       v3_vel : out std_logic_vector(6 downto 0);
        v3_active : out std_logic
        );
 end entity;

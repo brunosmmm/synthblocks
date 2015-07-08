@@ -44,8 +44,8 @@ entity synthblocks is
         sdata_out : out std_logic;
         ac97_nrst : out std_logic;
    --serial comm
-        rx : in std_logic;
-        tx : out std_logic);
+        midi_rx : in std_logic;
+        midi_tx : out std_logic);
   
 end synthblocks;
 
@@ -72,12 +72,12 @@ architecture Behavioral of synthblocks is
 
   signal voice_1_out : std_logic_vector(data_depth-1 downto 0);
   signal voice_1_pitch : std_logic_vector(6 downto 0);
-  signal voice_3_vel : std_logic_vector(6 downto 0);
+  signal voice_1_vel : std_logic_vector(6 downto 0);
   signal voice_1_active : std_logic;
 
   signal voice_2_out : std_logic_vector(data_depth-1 downto 0);
   signal voice_2_pitch : std_logic_vector(6 downto 0);
-  signal voice_3_vel : std_logic_vector(6 downto 0);  
+  signal voice_2_vel : std_logic_vector(6 downto 0);  
   signal voice_2_active : std_logic;
 
   signal voice_3_out : std_logic_vector(data_depth-1 downto 0);
@@ -184,6 +184,7 @@ begin
     port map(data_out=>voice_1_out,
              pitch=>voice_1_pitch,
              velocity=>voice_1_vel,
+				 osc_sel=>vgroup0_osc_sel,
              osc_1_2_shamt=>vgroup0_shamt_12,
              osc_3_4_shamt=>vgroup0_shamt_34,
              opmat_cmat1=>vgroup0_cmat1,
@@ -198,6 +199,7 @@ begin
     port map(data_out=>voice_2_out,
              pitch=>voice_2_pitch,
              velocity=>voice_2_vel,
+				 osc_sel=>vgroup0_osc_sel,
              osc_1_2_shamt=>vgroup0_shamt_12,
              osc_3_4_shamt=>vgroup0_shamt_34,
              opmat_cmat1=>vgroup0_cmat1,
@@ -212,6 +214,7 @@ begin
     port map(data_out=>voice_3_out,
              pitch=>voice_3_pitch,
              velocity=>voice_3_vel,
+				 osc_sel=>vgroup0_osc_sel,
              osc_1_2_shamt=>vgroup0_shamt_12,
              osc_3_4_shamt=>vgroup0_shamt_34,
              opmat_cmat1=>vgroup0_cmat1,
@@ -248,8 +251,8 @@ begin
 				 voice_data_in=>voice_data_to_ctl,
              ctl_rd=>ctl_rd,
              ctl_wr=>ctl_wr,
-             rx=>rx,
-             tx=>tx);
+             rx=>midi_rx,
+             tx=>midi_tx);
 
   --pitch generation & control
   pitch_unit: entity work.pitch_gen(gen)
