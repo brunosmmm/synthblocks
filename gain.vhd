@@ -6,9 +6,10 @@ library ieee_proposed;
 use ieee_proposed.fixed_pkg.all;
 
 entity gain is
-  generic(data_depth : integer := 24);
+  generic(data_depth : integer := 24;
+          gain_res : integer := 16);
   port(data_in : in std_logic_vector(data_depth-1 downto 0);
-       gain_in : in std_logic_vector(15 downto 0);
+       gain_in : in std_logic_vector(gain_res-1 downto 0);
 
        data_out : out std_logic_vector(data_depth-1 downto 0));
 
