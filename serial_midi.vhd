@@ -43,7 +43,7 @@ signal uart_tx_d : std_logic_vector(7 downto 0);
 signal uart_tx_e : std_logic;
 signal uart_tx_rdy : std_logic;
 
-type midi_rx_machine is (rx_status, rx_data);
+type midi_rx_machine is (rx_status, rx_data, rx_ctlop);
 
 type midi_data is array(15 downto 0) of std_logic_vector(7 downto 0);
 type midi_message is
@@ -110,27 +110,19 @@ begin
               --parse status byte; message length predefined
               case uart_rx_d(7 downto 4) is
                 
-                when note_off_byte =>
-                when note_on_byte =>
-                when kpressure_byte=>
-                when cc_byte=>
-                when cpressure_byte=>
-                when pbend_byte=>
-                --when sposptr_byte=>
+                when note_off_byte | note_on_byte | kpressure_byte |
+                  cc_byte | cpressure_byte | pbend_byte=>
                   --2 bytes
                   rx_midi_msg.data_size <= to_unsigned(2, 4);
 
                 when pc_byte=>
-                --when timecode_byte=>
-                --when ssel_byte=>
                   rx_midi_msg.data_size <= to_unsigned(1, 4);
 
                 when common_byte=>
                   case uart_rx_d(3 downto 0) is
                     when sposptr_byte=>
                       rx_midi_msg.data_size <= to_unsigned(2, 4);
-                    when timecode_byte=>
-                    when ssel_byte=>
+                    when timecode_byte | ssel_byte=>
                       rx_midi_msg.data_size <= to_unsigned(1, 4);
                     when sysex_byte=>
                       rx_midi_msg.is_sysex <= '1';
@@ -158,7 +150,7 @@ begin
               if uart_rx_e = '1' then
                 if uart_rx_d = common_byte & sysex_end_byte then
                   --end
-                  midi_rx_status := rx_status;
+                  midi_rx_status := rx_ctlop;
                   --store count
                   rx_midi_msg.data_size <= to_unsigned(midi_rx_bytes_recv, 4);
                   --finished
@@ -171,9 +163,13 @@ begin
               end if;
             else
               --finished
-              midi_rx_status := rx_status;
+              midi_rx_status := rx_ctlop;
               midi_message_valid <= '1';
             end if;
+
+          when rx_ctlop=>
+            --delay for one cycle
+            midi_rx_status := rx_status;
 
           when others =>
             null;
