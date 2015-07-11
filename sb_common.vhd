@@ -13,6 +13,12 @@ package sb_common is
 
   --velocity multiplier table generator
   type vel_mult_table is array(0 to 127) of ufixed(2 downto -5);
+  function generate_vel_mult return vel_mult_table;
+  
+end package;
+
+package body sb_common is
+  
   function generate_vel_mult return vel_mult_table is
     variable v_table : vel_mult_table;
     variable vel_mult : real;
@@ -24,6 +30,5 @@ package sb_common is
     end loop;
     return v_table;
   end function;
-  
-  
-end package;
+
+end package body;
