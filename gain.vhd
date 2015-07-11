@@ -19,33 +19,31 @@ end entity;
 
 architecture modify of gain is
 
-  --signal multiply : real;
-  signal multiply: sfixed(data_depth/2 - 1 downto -data_depth/2);
-  --constant gain_multiplier : real := 1.0/real(2**15);
-
   --calculate gains
-  --signal calculate_velocity : signed(data_depth-1 downto 0);
-  signal calculate_normal : std_logic_vector(data_depth-1 downto 0);
+  signal calculate_normal : signed(data_depth-1 downto 0);
 
   --velocity mode
   --multiplier table
   constant vm_tab : vel_mult_table := generate_vel_mult;
   signal velocity_multiplier : ufixed(2 downto -5);
-  signal data_times_vel : signed(data_depth-1 downto 0); --sfixed(data_depth/2 -1 downto -data_depth/2);
+  signal data_times_vel : signed(data_depth-1 downto 0);
   
   signal data_in_f : sfixed(data_depth-1 downto -5);
+  --interpret as fixed point directly
+  signal gain_in_f : sfixed(gain_res/2-1 downto -gain_res);
   
 begin
 
 
   data_out <= std_logic_vector(data_times_vel) when gain_mode = gain_mode_velocity else
-              calculate_normal;
+              std_logic_vector(calculate_normal);
 
   --data_in to fixed
-  data_in_f <= to_sfixed(signed(data_in), data_in_f); 
+  data_in_f <= to_sfixed(signed(data_in), data_in_f);
+  gain_in_f <= to_sfixed(signed(gain_in), gain_in_f);
   
-  --passthrough for now
-  calculate_normal <= data_in;
+  --calculate directly
+  calculate_normal <= to_signed(data_in_f * gain_in_f, calculate_normal);
 
   --scale with velocity
 
@@ -53,12 +51,6 @@ begin
   velocity_multiplier <= vm_tab(to_integer(unsigned(gain_in)));
   data_times_vel <= to_signed(data_in_f * to_sfixed(velocity_multiplier),
                               data_times_vel);
-  
-  --multiply
-  --multiply <= real(to_integer(signed(gain_in))) * gain_multiplier * real(to_integer(signed(data_in)));
-
-  --saturate
-  --data_out <= std_logic_vector(to_signed(multiply, data_depth));
 
 
 end architecture;
