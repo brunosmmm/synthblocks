@@ -18,21 +18,6 @@ entity serial_midi is
 
        );
 
-  constant note_off_byte : std_logic_vector(3 downto 0) := "1000";
-  constant note_on_byte : std_logic_vector(3 downto 0) := "1001";
-  constant kpressure_byte : std_logic_vector(3 downto 0) := "1010";
-  constant cc_byte : std_logic_vector(3 downto 0) := "1011";
-  constant pc_byte : std_logic_vector(3 downto 0) := "1100";
-  constant cpressure_byte : std_logic_vector(3 downto 0) := "1101";
-  constant pbend_byte : std_logic_vector(3 downto 0) := "1110";
-  constant common_byte : std_logic_vector(3 downto 0) := "1111";
-  
-  constant sysex_byte : std_logic_vector(3 downto 0) := "0000";
-  constant timecode_byte : std_logic_vector(3 downto 0) := "0001";
-  constant sposptr_byte : std_logic_vector(3 downto 0) := "0010";
-  constant ssel_byte : std_logic_vector(3 downto 0) := "0011";
-  constant sysex_end_byte : std_logic_vector(3 downto 0) := "0111";
-
 end entity;
 
 architecture comm of serial_midi is
@@ -58,6 +43,22 @@ signal midi_message_valid : std_logic;
 signal midi_message_done : std_logic;
 
 signal rx_midi_msg : midi_message;
+
+--MIDI message constants
+constant note_off_byte : std_logic_vector(3 downto 0) := "1000";
+constant note_on_byte : std_logic_vector(3 downto 0) := "1001";
+constant kpressure_byte : std_logic_vector(3 downto 0) := "1010";
+constant cc_byte : std_logic_vector(3 downto 0) := "1011";
+constant pc_byte : std_logic_vector(3 downto 0) := "1100";
+constant cpressure_byte : std_logic_vector(3 downto 0) := "1101";
+constant pbend_byte : std_logic_vector(3 downto 0) := "1110";
+constant common_byte : std_logic_vector(3 downto 0) := "1111";
+
+constant sysex_byte : std_logic_vector(3 downto 0) := "0000";
+constant timecode_byte : std_logic_vector(3 downto 0) := "0001";
+constant sposptr_byte : std_logic_vector(3 downto 0) := "0010";
+constant ssel_byte : std_logic_vector(3 downto 0) := "0011";
+constant sysex_end_byte : std_logic_vector(3 downto 0) := "0111";
 
 begin
 
