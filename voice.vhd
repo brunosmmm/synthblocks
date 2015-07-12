@@ -2,27 +2,30 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library work;
 use work.sb_common.all;
 
 entity voice is
-  generic(data_depth : integer := 24);
+  generic(data_depth : integer := 24;
+          control_base : std_logic_vector(15 downto 0));
   port(pitch : in std_logic_vector(6 downto 0);
        velocity : in std_logic_vector(6 downto 0);
        data_out : out std_logic_vector(data_depth-1 downto 0);
        clk_100 : in std_logic;
        rst : in std_logic;
 
-       --configuration
-       osc_sel : in std_logic_vector(15 downto 0);
-       osc_1_2_shamt : in std_logic_vector(15 downto 0);
-       osc_3_4_shamt : in std_logic_vector(15 downto 0);
-       opmat_cmat1 : in std_logic_vector(15 downto 0);
-       opmat_cmat2 : in std_logic_vector(15 downto 0);
-       opmat_sel : in std_logic_vector(15 downto 0);
-       param_config1 : in std_logic_vector(15 downto 0);
-       active : in std_logic
-       
+       active : in std_logic;
+
+       --attack_in : in std_logic_vector(15 downto 0);
+       --decay_in : in std_logic_vector(15 downto 0);
+       --release_in : in std_logic_vector(15 downto 0);
+       --sustain_in : in std_logic_vector(15 downto 0)
+
+       --control bus
+       ctl_data_addr : in std_logic_vector(15 downto 0);
+       ctl_data_in : in std_logic_vector(15 downto 0);
+       ctl_data_out : out std_logic_vector(15 downto 0);
+       ctl_rd : in std_logic;
+       ctl_wr : in std_logic
        );
 
 end entity;
@@ -78,9 +81,29 @@ architecture sound of voice is
   signal gain_d : std_logic_vector(15 downto 0);
   signal mixer_out : std_logic_vector(data_depth-1 downto 0);
 
-  --use velocity in the normal way, i.e. controlling oscillator
+  --control unit signals
+  signal osc_sel : std_logic_vector(15 downto 0);
+  signal osc_1_2_shamt : std_logic_vector(15 downto 0);
+  signal osc_3_4_shamt : std_logic_vector(15 downto 0);
+  signal opmat_cmat1 : std_logic_vector(15 downto 0);
+  signal opmat_cmat2 : std_logic_vector(15 downto 0);
+  signal opmat_sel : std_logic_vector(15 downto 0);
+  signal param_config1 : std_logic_vector(15 downto 0);
+  signal attack_in : std_logic_vector(15 downto 0);
+  signal decay_in : std_logic_vector(15 downto 0);
+  signal release_in : std_logic_vector(15 downto 0);
+  signal sustain_in : std_logic_vector(15 downto 0);
+  
+    --use velocity in the normal way, i.e. controlling oscillator
   --output amplitude
   alias param_velocity_gain : std_logic is param_config1(0);
+  
+    --ADSR envelope generator
+  signal adsr_out : std_logic_vector(data_depth-1 downto 0);
+  alias attack : std_logic_vector(6 downto 0) is attack_in(6 downto 0);
+  alias decay : std_logic_vector(6 downto 0) is decay_in(6 downto 0);
+  alias release : std_logic_vector(6 downto 0) is release_in(6 downto 0);
+  alias sustain : std_logic_vector(6 downto 0) is sustain_in(6 downto 0);
   
 begin
 
@@ -93,6 +116,30 @@ begin
                (others=>'1');
   osc4_gain <= velocity when param_velocity_gain = '1' else
                (others=>'1');
+
+  --control unit
+  control: entity work.control_unit(control)
+    generic map(base_address=>control_base)
+    port map(rst=>rst,
+             clk=>clk_100,
+             data_addr=>ctl_data_addr,
+             data_in=>ctl_data_in,
+             data_out=>ctl_data_out,
+             rd_en=>ctl_rd,
+             wr_en=>ctl_wr,
+             v0_r0=>osc_1_2_shamt,
+             v0_r1=>osc_3_4_shamt,
+             v0_r2=>opmat_cmat1,
+             v0_r3=>opmat_cmat2,
+             v0_r4=>osc_sel,
+             v0_r5=>opmat_sel,
+             v0_r6=>param_config1,
+             v0_r7=>attack_in,
+             v0_r8=>decay_in,
+             v0_r9=>sustain_in,
+             v0_r10=>release_in
+             );
+  
 
   --oscillator instances and peripherals
   osc1_shamt <= osc_1_2_shamt(7 downto 0);
@@ -216,8 +263,26 @@ begin
              gain_4=>gain_d,
              mix_out=>mixer_out
              );
+				 
+				 
+	--missing filter!
+	
+	--envelope generator
+  adsr0: entity work.adsr_gen(envelope)
+    generic map(data_depth=>data_depth)
+    port map(clk=>clk_100,
+             rst=>rst,
+             data_in=>mixer_out,
+             data_out=>adsr_out,
+             note_on=>active,
+             note_off=>not active,
+             attack_i=>attack,
+             decay_d=>decay,
+             release_d=>release,
+             sustain_l=>sustain);
+  
 
-  data_out <= mixer_out when active = '1' else
+  data_out <= adsr_out when active = '1' else
               (others=>'0');
   
 end architecture;
