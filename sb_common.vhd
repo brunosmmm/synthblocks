@@ -11,6 +11,25 @@ package sb_common is
   constant gain_mode_normal : std_logic_vector(3 downto 0) := x"0";
   constant gain_mode_velocity : std_logic_vector(3 downto 0) := x"1";
 
+  --default register values
+  constant v_shamt_12 : std_logic_vector(15 downto 0) := (others=>'0');
+  constant v_shamt_34 : std_logic_vector(15 downto 0) := (others=>'0');
+  constant v_cmat1 : std_logic_vector(15 downto 0) := x"0001";
+  constant v_cmat2 : std_logic_vector(15 downto 0) := (others=>'0');
+  constant v_oscsel : std_logic_vector(15 downto 0) := (others=>'0');
+  constant v_opsel : std_logic_vector(15 downto 0) := (others=>'0');
+  constant v_pconf1 : std_logic_vector(15 downto 0) := x"0001";
+  constant v_adsr_a : std_logic_vector(15 downto 0) := x"0010";
+  constant v_adsr_d : std_logic_vector(15 downto 0) := x"0010";
+  constant v_adsr_s : std_logic_vector(15 downto 0) := x"0040";
+  constant v_adsr_r : std_logic_vector(15 downto 0) := x"0010";
+
+  --control bus base addresses
+  constant voice_0_base : std_logic_vector(15 downto 0) := x"0000";
+  constant voice_1_base : std_logic_vector(15 downto 0) := x"0010";
+  constant voice_2_base : std_logic_vector(15 downto 0) := x"0020";
+  constant voice_3_base : std_logic_vector(15 downto 0) := x"0030";  
+
   --velocity multiplier table generator
   type vel_mult_table is array(0 to 127) of ufixed(2 downto -5);
   function generate_vel_mult return vel_mult_table;
