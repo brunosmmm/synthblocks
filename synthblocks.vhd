@@ -22,6 +22,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use work.Spar6_Parts.all;
 
+library ieee_proposed;
+use ieee_proposed.fixed_pkg.all;
+
 use work.sb_common.all;
 
 -- Uncomment the following library declaration if using
@@ -87,6 +90,8 @@ architecture Behavioral of synthblocks is
   signal voice_3_pitch : std_logic_vector(6 downto 0);
   signal voice_3_vel : std_logic_vector(6 downto 0);
   signal voice_3_active : std_logic;
+
+  signal synth_data : std_logic_vector(data_depth-1 downto 0);
   
   component clk_wiz_v3_6 is
     port
@@ -124,20 +129,20 @@ architecture Behavioral of synthblocks is
 begin
 
   rst <= not top_rst;
-  voice_0_pitch <= switches(5 downto 0) & '0';
+  --voice_0_pitch <= switches(5 downto 0) & '0';
   vgroup0_osc_sel <= "00000000000000" & switches(7 downto 6);
   vgroup0_cmat1 <= x"0001";
   vgroup0_cmat2 <= x"0002";
   vgroup0_op_sel <= x"0000";
-  voice_0_active <= '1';
-  voice_0_vel <= (others=>'1');
+  --voice_0_active <= '1';
+  --voice_0_vel <= (others=>'1');
   
   --system clock
   pll: clk_wiz_v3_6 
 	port map(clk_in1 => ck,
 	         clk_out1 => sysclk_100,
              clk_out2 => sysclk_10,
-             reset=> rst,
+             reset=>rst,
              locked=>open);
 
   --audio codec
@@ -185,7 +190,7 @@ begin
 
   voice1: entity work.voice(sound)
     generic map(data_depth=>data_depth,
-                control_base=>voice_0_base)
+                control_base=>voice_1_base)
     port map(data_out=>voice_1_out,
              pitch=>voice_1_pitch,
              velocity=>voice_1_vel,
@@ -200,7 +205,7 @@ begin
 
   voice2: entity work.voice(sound)
     generic map(data_depth=>data_depth,
-                control_base=>voice_0_base)
+                control_base=>voice_2_base)
     port map(data_out=>voice_2_out,
              pitch=>voice_2_pitch,
              velocity=>voice_2_vel,
@@ -213,9 +218,9 @@ begin
              ctl_rd=>ctl_rd,
              ctl_wr=>ctl_wr);
 
-    voice3: entity work.voice(sound)
-      generic map(data_depth=>data_depth,
-                  control_base=>voice_0_base)
+  voice3: entity work.voice(sound)
+    generic map(data_depth=>data_depth,
+                control_base=>voice_3_base)
     port map(data_out=>voice_3_out,
              pitch=>voice_3_pitch,
              velocity=>voice_3_vel,
@@ -235,7 +240,7 @@ begin
              ctl_addr=>ctl_data_addr,
              ctl_data_out=>ctl_data_from,
              pitch_data_in=>pitch_data_to_ctl,
-				 voice_data_in=>voice_data_to_ctl,
+             voice_data_in=>voice_data_to_ctl,
              ctl_rd=>ctl_rd,
              ctl_wr=>ctl_wr,
              rx=>midi_rx,
@@ -250,9 +255,9 @@ begin
              data_out=>pitch_data_to_ctl,
              rd_en=>ctl_rd,
              wr_en=>ctl_wr,
-             v0_pitch=>open,--voice_0_pitch
-             v0_vel=>open,
-             v0_active=>open,
+             v0_pitch=>voice_0_pitch,--voice_0_pitch
+             v0_vel=>voice_0_vel,
+             v0_active=>voice_0_active,
              v1_pitch=>voice_1_pitch,
              v1_vel=>voice_1_vel,
              v1_active=>voice_1_active,
@@ -263,7 +268,21 @@ begin
              v3_vel=>voice_3_vel,
              v3_active=>voice_3_active
              );
-    
+
+  --voice mixer
+  vmix0: entity work.mix_4_to_1(mix)
+    generic map(data_depth=>data_depth,
+                gain_res=>8)
+    port map(in_1=>voice_0_out,
+             in_2=>voice_1_out,
+             in_3=>voice_2_out,
+             in_4=>voice_3_out,
+             mix_out=>synth_data,
+             gain_1=>to_slv(to_ufixed(0.25, 2, -5)),
+             gain_2=>to_slv(to_ufixed(0.25, 2, -5)),
+             gain_3=>to_slv(to_ufixed(0.25, 2, -5)),
+             gain_4=>to_slv(to_ufixed(0.25, 2, -5))
+             );
   
   --sample oscillator data
   process (sysclk_100, rst)
@@ -274,8 +293,8 @@ begin
       R_bus <= (others=>'0');
     elsif rising_edge(sysclk_100) then
       if (ready = '1') then
-        L_bus <= voice_0_out(data_depth-1 downto data_depth-18);
-        R_bus <= voice_0_out(data_depth-1 downto data_depth-18);
+        L_bus <= synth_data(data_depth-1 downto data_depth-18);
+        R_bus <= synth_data(data_depth-1 downto data_depth-18);
       end if; 
     end if;
     
