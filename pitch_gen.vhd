@@ -37,8 +37,8 @@ architecture gen of pitch_gen is
 
   --ctl addresses
   --addresses related to midi messages for easier use
-  constant note_on_addr : std_logic_vector(15 downto 0) := x"8000";
-  constant note_off_addr : std_logic_vector(15 downto 0) := x"9000";
+  constant note_on_addr : std_logic_vector(15 downto 0) := x"9000";
+  constant note_off_addr : std_logic_vector(15 downto 0) := x"8000";
   
   --note event registers
   --upper byte is 0kkkkkkk, not number
@@ -61,7 +61,7 @@ architecture gen of pitch_gen is
   signal note_to_voices : note_to_voice;
   signal voices_to_note : voice_to_note;
   signal voices_to_velocity : voice_to_note;
-  signal active_voice_count : integer;
+  signal active_voice_count : integer range 0 to voice_num;
 
 begin
 
@@ -74,17 +74,19 @@ begin
 
       active_notes <= (others=>'0');
       active_voice_count <= 0;
+      active_voices <= (others=>'0');
       
     elsif rising_edge(clk) then
 
-      if wr_en = '1' and rd_en = '1' then
+      if wr_en = '1' and rd_en = '0' then
 
         case data_addr is
 
           when note_on_addr =>
 
-            --allocate a voice if available
-            if active_voice_count < voice_num then
+            --allocate a voice if available, also check that note is not
+            --already active, else ignore
+            if active_voice_count < voice_num and active_notes(to_integer(unsigned(evt_note_number))) = '0' then
               --find next available
 
               for i in 0 to voice_num-1 loop
@@ -125,20 +127,28 @@ begin
    
   end process;
 
-  v0_pitch <= voices_to_note(0);
-  v0_vel <= voices_to_velocity(0);
+  v0_pitch <= voices_to_note(0) when active_voices(0) = '1' else
+              (others=>'0');
+  v0_vel <= voices_to_velocity(0) when active_voices(0) = '1' else
+            (others=>'0');
   v0_active <= active_voices(0);
 
-  v1_pitch <= voices_to_note(1);
-  v1_vel <= voices_to_velocity(1);
+  v1_pitch <= voices_to_note(1) when active_voices(1) = '1' else
+              (others=>'0');
+  v1_vel <= voices_to_velocity(1) when active_voices(1) = '1' else
+            (others=>'0');
   v1_active <= active_voices(1);
 
-  v2_pitch <= voices_to_note(2);
-  v2_vel <= voices_to_velocity(2);
+  v2_pitch <= voices_to_note(2) when active_voices(2) = '1' else
+              (others=>'0');
+  v2_vel <= voices_to_velocity(2) when active_voices(2) = '1' else
+            (others=>'0');
   v2_active <= active_voices(2);
 
-  v3_pitch <= voices_to_note(3);
-  v3_vel <= voices_to_velocity(3);
+  v3_pitch <= voices_to_note(3) when active_voices(3) = '1' else
+              (others=>'0');
+  v3_vel <= voices_to_velocity(3) when active_voices(3) = '1' else
+            (others=>'0');
   v3_active <= active_voices(3);
   
 end architecture;
