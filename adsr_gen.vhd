@@ -16,19 +16,20 @@ entity adsr_gen is
        note_on : in std_logic;
        note_off : in std_logic;
 
-       attack_i : in std_logic_vector(6 downto 0);
-       decay_d : in std_logic_vector(6 downto 0);
-       release_d : in std_logic_vector(6 downto 0);
-       sustain_l : in std_logic_vector(6 downto 0));
+       attack_i : in std_logic_vector(7 downto 0);
+       decay_d : in std_logic_vector(7 downto 0);
+       release_d : in std_logic_vector(7 downto 0);
+       sustain_l : in std_logic_vector(7 downto 0);
+       releasing : out std_logic);
 end entity;
 
 architecture envelope of adsr_gen is
 
-  signal adsr_gain_s : signed(8 downto 0);
+  signal adsr_gain_s : signed(9 downto 0);
   
-  signal adsr_gain : std_logic_vector(6 downto 0);
-  constant max_gain : signed(8 downto 0) := "001111111";
-  constant zero_gain : signed(8 downto 0) := (others=>'0');
+  signal adsr_gain : std_logic_vector(7 downto 0);
+  constant max_gain : signed(9 downto 0) := "0011111111";
+  constant zero_gain : signed(9 downto 0) := (others=>'0');
   --counter to divide clock
   constant env_granularity : unsigned(31 downto 0) := to_unsigned(100000, 32);
 
@@ -36,7 +37,7 @@ architecture envelope of adsr_gen is
 
   --these are signals for now, just placeholders
   --inputs could be providing these signals
-  signal note_velocity : std_logic_vector(6 downto 0);
+  --signal note_velocity : std_logic_vector(6 downto 0);
   --signal attack_increment : std_logic_vector(31 downto 0);
   --signal decay_decrement : std_logic_vector(31 downto 0);
   --signal release_decrement : std_logic_vector(31 downto 0);
@@ -45,8 +46,8 @@ begin
 
   gain_block: entity work.gain(modify)
     generic map(data_depth=>data_depth,
-                gain_res=>7,
-                gain_mode=>gain_mode_velocity)
+                gain_res=>8,
+                gain_mode=>gain_mode_envelope)
     port map(data_in=>data_in,
              gain_in=>adsr_gain,
              data_out=>data_out);
@@ -54,7 +55,7 @@ begin
   env_gen: process(clk, rst)
     variable env_state : adsr_state;
     variable env_counter : unsigned(31 downto 0);
-    variable calculate_gain : signed(8 downto 0);
+    variable calculate_gain : signed(9 downto 0);
   begin
 
     if rst = '1' then
@@ -63,6 +64,7 @@ begin
       --adsr_gain <= (others=>'0');
       env_counter := (others=>'0');
       calculate_gain := (others=>'0');
+      releasing <= '0';
     elsif rising_edge(clk) then
 
       case env_state is
@@ -112,6 +114,7 @@ begin
           if note_off = '1' then
             --go to release phase
             env_state := adsr_r;
+            releasing <= '1';
           end if;
         when adsr_r =>
           --start ramping down volume
@@ -120,6 +123,7 @@ begin
             if calculate_gain <= zero_gain then
               adsr_gain_s <= zero_gain;
               env_state := adsr_idle;
+              releasing <= '0';
             else
               adsr_gain_s <= calculate_gain;
             end if;
@@ -134,6 +138,6 @@ begin
     end if;
   end process;
 
-  adsr_gain <= std_logic_vector(adsr_gain_s(6 downto 0));
+  adsr_gain <= std_logic_vector(adsr_gain_s(7 downto 0));
 
 end architecture;
