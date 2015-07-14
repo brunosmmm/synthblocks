@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity serial_midi is
+  generic(midi_buf_size : integer := 16);
   port(clk : in std_logic;
        rst : in std_logic;
        tx : out std_logic;
@@ -29,8 +30,9 @@ signal uart_tx_e : std_logic;
 signal uart_tx_rdy : std_logic;
 
 type midi_rx_machine is (rx_status, rx_data, rx_ctlop);
+type ctl_machine is (ctl_idle, ctl_write, ctl_read);
 
-type midi_data is array(15 downto 0) of std_logic_vector(7 downto 0);
+type midi_data is array(midi_buf_size-1 downto 0) of std_logic_vector(7 downto 0);
 type midi_message is
 record
   status_byte : std_logic_vector(7 downto 0);
@@ -63,7 +65,7 @@ constant sysex_end_byte : std_logic_vector(3 downto 0) := "0111";
 begin
 
   	uart0: entity work.basic_uart(Behavioral)
-	generic map(200) --31250 baud
+	generic map(54) --31250 baud
 	port map(clk=>clk,
              reset=>rst,
              rx_data=>uart_rx_d,
@@ -76,7 +78,7 @@ begin
 
     rxmidi: process(clk, rst)
       variable midi_rx_status : midi_rx_machine;
-      variable midi_rx_bytes_recv : integer;
+      variable midi_rx_bytes_recv : integer range 0 to midi_buf_size;
     begin
 
       if rst = '1' then
@@ -164,7 +166,7 @@ begin
               end if;
             else
               --finished
-              midi_rx_status := rx_ctlop;
+              midi_rx_status := rx_status;
               midi_message_valid <= '1';
             end if;
 
@@ -180,16 +182,41 @@ begin
     end process;
 
     ctlbus: process (clk, rst, midi_message_valid)
+      variable ctl_state : ctl_machine;
     begin
 
       if rst = '1' then
         midi_message_done <= '0';
+        ctl_wr <= '0';
+        ctl_rd <= '0';
+        ctl_data_out <= (others=>'0');
+        ctl_addr <= (others=>'0');
+        ctl_state := ctl_idle;
 
       elsif rising_edge(clk) then
 
+        if ctl_state = ctl_write then
+          ctl_wr <= '0';
+          ctl_state := ctl_idle;
+        end if;
+
         if midi_message_valid = '1' then
           --start write to control bus
+          if rx_midi_msg.is_sysex = '0' then
+            ctl_addr <= rx_midi_msg.status_byte & "00000000";
 
+            if rx_midi_msg.data_size = to_unsigned(2, 4) then
+              ctl_data_out <= rx_midi_msg.data_bytes(0) & rx_midi_msg.data_bytes(1);
+            elsif rx_midi_msg.data_size = to_unsigned(1, 4) then
+              ctl_data_out <= rx_midi_msg.data_bytes(0) & "00000000";
+
+            end if;
+
+            ctl_wr <= '1';
+            ctl_state := ctl_write;
+            
+          end if;
+       
         end if;
 
       end if;
