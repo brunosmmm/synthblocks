@@ -33,7 +33,7 @@ architecture envelope of adsr_gen is
   --counter to divide clock
   constant env_granularity : unsigned(31 downto 0) := to_unsigned(100000, 32);
 
-  type adsr_state is (adsr_idle, adsr_a, adsr_d, adsr_s, adsr_r);
+  type adsr_state is (adsr_idle, adsr_a, adsr_d, adsr_s, adsr_r, adsr_zcross);
 
   --these are signals for now, just placeholders
   --inputs could be providing these signals
@@ -47,7 +47,8 @@ begin
   gain_block: entity work.gain(modify)
     generic map(data_depth=>data_depth,
                 gain_res=>8,
-                gain_mode=>gain_mode_envelope)
+                gain_mode=>gain_mode_envelope,
+                zero_cross=>'1')
     port map(data_in=>data_in,
              gain_in=>adsr_gain,
              data_out=>data_out);
@@ -56,6 +57,9 @@ begin
     variable env_state : adsr_state;
     variable env_counter : unsigned(31 downto 0);
     variable calculate_gain : signed(9 downto 0);
+    variable next_gain_zc : signed(9 downto 0);
+    variable last_signal_zc : std_logic;
+    variable next_state_zc : adsr_state;
   begin
 
     if rst = '1' then
@@ -64,7 +68,10 @@ begin
       --adsr_gain <= (others=>'0');
       env_counter := (others=>'0');
       calculate_gain := (others=>'0');
+      next_gain_zc := (others=>'0');
       releasing <= '0';
+      last_signal_zc := '0';
+      next_state_zc := adsr_idle;
     elsif rising_edge(clk) then
 
       case env_state is
@@ -76,16 +83,29 @@ begin
             --transition to attack phase
             env_state := adsr_a;
           end if;
+        when adsr_zcross =>
+          if (data_in(data_depth-1) xor last_signal_zc) = '1' then
+            --zero cross occurred
+            adsr_gain_s <= next_gain_zc;
+            env_state := next_state_zc;
+          end if;
+          last_signal_zc := data_in(data_depth-1); 
         when adsr_a =>
           --start ramping up volume
           if env_counter = env_granularity - 1 then
             --increase gain
             calculate_gain := adsr_gain_s + signed('0' & attack_i);
             if calculate_gain >= max_gain then
-              adsr_gain_s <= max_gain;
-              env_state := adsr_d;
+              --adsr_gain_s <= max_gain;
+              --env_state := adsr_d;
+              env_state := adsr_zcross;
+              next_gain_zc := max_gain;
+              next_state_zc := adsr_d;
             else
-              adsr_gain_s <= adsr_gain_s + signed('0' & attack_i);
+              env_state := adsr_zcross;
+              next_gain_zc := adsr_gain_s + signed('0' & attack_i);
+              next_state_zc := adsr_a;
+              --adsr_gain_s <= adsr_gain_s + signed('0' & attack_i);
             end if;
             env_counter := (others=>'0');
           else
@@ -100,10 +120,16 @@ begin
             --this can underflow, do properly
             calculate_gain := adsr_gain_s - signed('0' & decay_d);
             if calculate_gain <= signed('0' & sustain_l) then
-              adsr_gain_s <= signed("00" & sustain_l);
-              env_state := adsr_s;
+              --adsr_gain_s <= signed("00" & sustain_l);
+              --env_state := adsr_s;
+              env_state := adsr_zcross;
+              next_gain_zc := signed("00" & sustain_l);
+              next_state_zc := adsr_s;
             else
-              adsr_gain_s <= adsr_gain_s - signed('0' & decay_d);
+              --adsr_gain_s <= adsr_gain_s - signed('0' & decay_d);
+              env_state := adsr_zcross;
+              next_gain_zc := adsr_gain_s - signed('0' & decay_d);
+              next_state_zc := adsr_d;
             end if;
             env_counter := (others=>'0');
           else
@@ -125,7 +151,10 @@ begin
               env_state := adsr_idle;
               releasing <= '0';
             else
-              adsr_gain_s <= calculate_gain;
+              --adsr_gain_s <= calculate_gain;
+              env_state := adsr_zcross;
+              next_gain_zc := calculate_gain;
+              next_state_zc := adsr_r;
             end if;
             env_counter := (others=>'0');
           else

@@ -10,7 +10,8 @@ use work.sb_common.all;
 entity gain is
   generic(data_depth : integer := 24;
           gain_res : integer := 16;
-          gain_mode : std_logic_vector(3 downto 0) := gain_mode_normal);
+          gain_mode : std_logic_vector(3 downto 0) := gain_mode_normal;
+          zero_cross : std_logic := '0');
   port(data_in : in std_logic_vector(data_depth-1 downto 0);
        gain_in : in std_logic_vector(gain_res-1 downto 0);
 
@@ -62,6 +63,5 @@ begin
                          (others=>'0');
   data_times_env <= to_signed(data_in_f * to_sfixed(envelope_multiplier),
                               data_times_env);
-
 
 end architecture;
